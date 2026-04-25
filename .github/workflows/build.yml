@@ -14,9 +14,10 @@ jobs:
       - name: 1. Lay ma nguon cua Phap Su
         uses: actions/checkout@v4
 
-      - name: 2. Cai dat lo duc Theos
+      - name: 2. Cai dat lo duc Theos (Cach cuc suc fix loi API)
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          git clone https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
       - name: 3. Tien hanh ep Dylib va dong goi
