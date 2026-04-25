@@ -64,8 +64,18 @@
 @end
 
 // ==========================================
-// COMPONENT 2: BẢNG ĐIỀU KHIỂN CHÍNH
+// COMPONENT 2: BẢNG ĐIỀU KHIỂN CHÍNH & ROOT VC
 // ==========================================
+
+// --- BỘ BẢO KÊ XOAY MÀN HÌNH & ẨN STATUS BAR ---
+@interface HUDRootVC : UIViewController
+@end
+@implementation HUDRootVC
+- (BOOL)prefersStatusBarHidden { return YES; }
+- (BOOL)shouldAutorotate { return YES; }
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations { return UIInterfaceOrientationMaskAll; }
+@end
+
 @interface PerformanceHUDWindow : UIWindow
 @property (nonatomic, strong) UILabel *fpsTitle;
 @property (nonatomic, strong) UILabel *fpsValue;
@@ -114,7 +124,6 @@
     return self;
 }
 
-// --- HÀM XỬ LÝ KÉO THẢ (ĐÃ FIX LỖI GIẬT) ---
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
     CGPoint translation = [recognizer translationInView:self];
     self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
@@ -130,13 +139,11 @@
     NSTimeInterval delta = link.timestamp - self.lastTime;
     
     if (delta >= 1.0) {
-        // 1. UPDATE FPS
         double fps = self.count / delta;
         self.count = 0;
         self.lastTime = link.timestamp;
         self.fpsValue.text = [NSString stringWithFormat:@"%.0f", fps];
 
-        // 2. UPDATE RAM
         struct mach_task_basic_info info;
         mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
         kern_return_t kerr = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &size);
@@ -144,7 +151,6 @@
         CGFloat ramProgress = ramMB / 6144.0;
         [self.ramView updateWithProgress:ramProgress valueText:[NSString stringWithFormat:@"%.0f MB", ramMB]];
 
-        // 3. UPDATE CPU
         thread_array_t thread_list;
         mach_msg_type_number_t thread_count;
         thread_info_data_t thinfo;
@@ -168,10 +174,9 @@
             vm_deallocate(mach_task_self(), (vm_offset_t)thread_list, thread_count * sizeof(thread_t));
         }
         
-        // FIX: Lấy tổng chia cho số nhân CPU để về thang 100%
         NSUInteger numCores = [[NSProcessInfo processInfo] activeProcessorCount];
         float normalized_cpu = total_cpu / numCores;
-        if (normalized_cpu > 100.0) normalized_cpu = 100.0; // Khóa mỏ lỡ nó nhảy lên 101%
+        if (normalized_cpu > 100.0) normalized_cpu = 100.0; 
         
         CGFloat cpuProgress = normalized_cpu / 100.0; 
         [self.cpuView updateWithProgress:cpuProgress valueText:[NSString stringWithFormat:@"%.0f%%", normalized_cpu]];
@@ -191,6 +196,11 @@ static PerformanceHUDWindow *hudWindow;
     dispatch_once(&onceToken, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
             hudWindow = [[PerformanceHUDWindow alloc] initWithFrame:CGRectMake(20, 50, 185, 75)];
+            
+            // --- GÁN BỘ BẢO KÊ VÀO ĐÂY LÀ HẾT LỖI ---
+            hudWindow.windowScene = (UIWindowScene *)self;
+            hudWindow.rootViewController = [[HUDRootVC alloc] init];
+            
             hudWindow.hidden = NO;
         });
     });
