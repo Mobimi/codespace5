@@ -1,0 +1,9 @@
+Package: com.phapsu.performancehud
+Name: PerformanceHUD
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: HUD Hien thi FPS va RAM sieu nhe
+Maintainer: Phap Su 12 Pro Max
+Author: Phap Su 12 Pro Max
+Section: Tweaks
