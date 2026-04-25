@@ -128,10 +128,27 @@
     return self;
 }
 
+// --- HÀM XỬ LÝ KÉO THẢ (ĐÃ FIX LỖI TỐC BIẾN) ---
+static CGPoint startCenter;
+static CGPoint startTouch;
+
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
-    CGPoint translation = [recognizer translationInView:self.superview];
-    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-    [recognizer setTranslation:CGPointZero inView:self.superview];
+    if (recognizer.state == UIGestureRecognizerStateBegan) {
+        // Vừa chạm ngón tay vào là khóa mục tiêu, lưu vị trí gốc
+        startCenter = self.center;
+        startTouch = [recognizer locationInView:nil]; // nil = Lấy tọa độ gốc của màn hình
+    } 
+    else if (recognizer.state == UIGestureRecognizerStateChanged) {
+        // Ngón tay di chuyển đến đâu, tính khoảng cách trừ đi tọa độ gốc
+        CGPoint currentTouch = [recognizer locationInView:nil];
+        CGFloat dx = currentTouch.x - startTouch.x;
+        CGFloat dy = currentTouch.y - startTouch.y;
+        
+        // Bắt thằng HUD đi theo đúng liều lượng đó, không tự cộng dồn nữa
+        self.center = CGPointMake(startCenter.x + dx, startCenter.y + dy);
+    }
+}
+self.superview];
 }
 
 - (void)tick:(CADisplayLink *)link {
