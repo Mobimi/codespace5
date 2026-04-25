@@ -1,0 +1,31 @@
+name: Build iOS Tweak (Dylib)
+
+# Kích hoạt khi có code mới hoặc tự bấm nút chạy
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: 
+
+jobs:
+  build:
+    # Mượn server Mac xịn của GitHub
+    runs-on: macos-latest
+
+    steps:
+      - name: 1. Lay ma nguon cua Phap Su
+        uses: actions/checkout@v3
+
+      - name: 2. Cai dat lo duc Theos
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+
+      - name: 3. Tien hanh ep Dylib va dong goi
+        run: |
+          make package FINALPACKAGE=1
+
+      - name: 4. Tra hang cho Phap Su
+        uses: actions/upload-artifact@v3
+        with:
+          name: PerformanceHUD_Tweak
+          path: packages/*.deb
