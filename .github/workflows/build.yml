@@ -8,12 +8,11 @@ on:
 
 jobs:
   build:
-    # Mượn server Mac xịn của GitHub
     runs-on: macos-latest
 
     steps:
       - name: 1. Lay ma nguon cua Phap Su
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 2. Cai dat lo duc Theos
         run: |
@@ -25,7 +24,7 @@ jobs:
           make package FINALPACKAGE=1
 
       - name: 4. Tra hang cho Phap Su
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: PerformanceHUD_Tweak
           path: packages/*.deb
