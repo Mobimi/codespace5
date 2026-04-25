@@ -20,7 +20,6 @@
         CGPoint center = CGPointMake(frame.size.width / 2.0, frame.size.width / 2.0);
         UIBezierPath *circlePath = [UIBezierPath bezierPathWithArcCenter:center radius:radius startAngle:-M_PI_2 endAngle:M_PI_2 * 3 clockwise:YES];
 
-        // Vòng tròn nền (màu xám tối)
         self.bgLayer = [CAShapeLayer layer];
         self.bgLayer.path = circlePath.CGPath;
         self.bgLayer.fillColor = [UIColor clearColor].CGColor;
@@ -28,17 +27,15 @@
         self.bgLayer.lineWidth = 4.0;
         [self.layer addSublayer:self.bgLayer];
 
-        // Vòng tròn tiến trình (chạy màu)
         self.progressLayer = [CAShapeLayer layer];
         self.progressLayer.path = circlePath.CGPath;
         self.progressLayer.fillColor = [UIColor clearColor].CGColor;
         self.progressLayer.strokeColor = [UIColor greenColor].CGColor;
         self.progressLayer.lineWidth = 4.0;
-        self.progressLayer.strokeEnd = 0.0; // Bắt đầu ở 0
+        self.progressLayer.strokeEnd = 0.0; 
         self.progressLayer.lineCap = kCALineCapRound;
         [self.layer addSublayer:self.progressLayer];
 
-        // Tên (Nằm giữa vòng tròn)
         self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.width)];
         self.titleLabel.text = title;
         self.titleLabel.textColor = [UIColor whiteColor];
@@ -46,7 +43,6 @@
         self.titleLabel.textAlignment = NSTextAlignmentCenter;
         [self addSubview:self.titleLabel];
 
-        // Giá trị (Nằm dưới vòng tròn)
         self.valueLabel = [[UILabel alloc] initWithFrame:CGRectMake(-10, frame.size.width + 2, frame.size.width + 20, 20)];
         self.valueLabel.textColor = [UIColor whiteColor];
         self.valueLabel.font = [UIFont boldSystemFontOfSize:11];
@@ -56,14 +52,12 @@
     return self;
 }
 
-// Hàm cập nhật độ đầy và màu sắc theo quang phổ (Xanh -> Đỏ)
 - (void)updateWithProgress:(CGFloat)progress valueText:(NSString *)text {
     if (progress > 1.0) progress = 1.0;
     if (progress < 0.0) progress = 0.0;
 
     self.progressLayer.strokeEnd = progress;
     
-    // Thuật toán đổi màu: 0.33 là màu Xanh, 0.0 là màu Đỏ
     CGFloat hue = (1.0 - progress) * 0.33; 
     UIColor *dynColor = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:1.0];
     
@@ -91,15 +85,13 @@
     if (self) {
         self.windowLevel = UIWindowLevelStatusBar + 100.0;
         self.userInteractionEnabled = YES; 
-        self.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.85]; // Đen ngầu
+        self.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.85]; 
         self.layer.cornerRadius = 15;
         self.layer.masksToBounds = YES;
 
-        // Cho phép Kéo Thả
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan];
 
-        // --- CỘT 1: FPS (Chỉ Text, Không Vòng) ---
         self.fpsTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 15, 50, 15)];
         self.fpsTitle.text = @"FPS";
         self.fpsTitle.textColor = [UIColor lightGrayColor];
@@ -113,42 +105,33 @@
         self.fpsValue.textAlignment = NSTextAlignmentCenter;
         [self addSubview:self.fpsValue];
 
-        // --- CỘT 2: CPU (Vòng Tròn) ---
         self.cpuView = [[HUDCircleView alloc] initWithFrame:CGRectMake(70, 10, 40, 40) title:@"CPU"];
         [self addSubview:self.cpuView];
 
-        // --- CỘT 3: RAM (Vòng Tròn) ---
         self.ramView = [[HUDCircleView alloc] initWithFrame:CGRectMake(130, 10, 40, 40) title:@"RAM"];
         [self addSubview:self.ramView];
 
-        // Khởi động Engine đếm nhịp
         self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
         [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
     }
     return self;
 }
 
-// --- HÀM XỬ LÝ KÉO THẢ (ĐÃ FIX LỖI TỐC BIẾN) ---
+// --- HÀM XỬ LÝ KÉO THẢ CHUẨN ---
 static CGPoint startCenter;
 static CGPoint startTouch;
 
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
     if (recognizer.state == UIGestureRecognizerStateBegan) {
-        // Vừa chạm ngón tay vào là khóa mục tiêu, lưu vị trí gốc
         startCenter = self.center;
-        startTouch = [recognizer locationInView:nil]; // nil = Lấy tọa độ gốc của màn hình
+        startTouch = [recognizer locationInView:nil]; 
     } 
     else if (recognizer.state == UIGestureRecognizerStateChanged) {
-        // Ngón tay di chuyển đến đâu, tính khoảng cách trừ đi tọa độ gốc
         CGPoint currentTouch = [recognizer locationInView:nil];
         CGFloat dx = currentTouch.x - startTouch.x;
         CGFloat dy = currentTouch.y - startTouch.y;
-        
-        // Bắt thằng HUD đi theo đúng liều lượng đó, không tự cộng dồn nữa
         self.center = CGPointMake(startCenter.x + dx, startCenter.y + dy);
     }
-}
-self.superview];
 }
 
 - (void)tick:(CADisplayLink *)link {
@@ -159,24 +142,20 @@ self.superview];
     self.count++;
     NSTimeInterval delta = link.timestamp - self.lastTime;
     
-    if (delta >= 1.0) { // Cập nhật mỗi 1 giây
-        // 1. UPDATE FPS
+    if (delta >= 1.0) {
         double fps = self.count / delta;
         self.count = 0;
         self.lastTime = link.timestamp;
         self.fpsValue.text = [NSString stringWithFormat:@"%.0f", fps];
 
-        // 2. UPDATE RAM
         struct mach_task_basic_info info;
         mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
         kern_return_t kerr = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &size);
         double ramMB = (kerr == KERN_SUCCESS) ? (info.resident_size / 1024.0 / 1024.0) : 0;
         
-        // Mốc max 6144MB để tính vòng tròn và màu (12 Pro Max có 6GB RAM)
         CGFloat ramProgress = ramMB / 6144.0;
         [self.ramView updateWithProgress:ramProgress valueText:[NSString stringWithFormat:@"%.0f MB", ramMB]];
 
-        // 3. UPDATE CPU
         thread_array_t thread_list;
         mach_msg_type_number_t thread_count;
         thread_info_data_t thinfo;
@@ -200,7 +179,6 @@ self.superview];
             vm_deallocate(mach_task_self(), (vm_offset_t)thread_list, thread_count * sizeof(thread_t));
         }
         
-        // Mốc max 100% để tính vòng tròn và màu
         CGFloat cpuProgress = total_cpu / 100.0; 
         [self.cpuView updateWithProgress:cpuProgress valueText:[NSString stringWithFormat:@"%.0f%%", total_cpu]];
     }
@@ -218,7 +196,6 @@ static PerformanceHUDWindow *hudWindow;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
-            // Khung tổng: Rộng 185, Cao 75, nằm góc trên trái
             hudWindow = [[PerformanceHUDWindow alloc] initWithFrame:CGRectMake(20, 50, 185, 75)];
             hudWindow.hidden = NO;
         });
