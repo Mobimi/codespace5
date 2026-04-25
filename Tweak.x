@@ -71,12 +71,33 @@
 @end
 @implementation HUDRootVC
 - (BOOL)prefersStatusBarHidden { return YES; } // Trảm Status Bar
-- (BOOL)shouldAutorotate { return YES; }
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations { return UIInterfaceOrientationMaskAll; }
+
+// MA THUẬT: ĐI TÌM WINDOW CỦA GAME ĐỂ CHÉP BÀI (HƯỚNG XOAY)
+- (UIViewController *)gameRootVC {
+    if (@available(iOS 13.0, *)) {
+        UIWindowScene *scene = (UIWindowScene *)self.view.window.windowScene;
+        for (UIWindow *w in scene.windows) {
+            if (w != self.view.window && w.isKeyWindow && w.rootViewController) {
+                return w.rootViewController;
+            }
+        }
+    }
+    return nil;
+}
+
+// Bắt chước 100% hướng xoay của Game, kể cả khi khoá màn hình dọc ngoài Control Center
+- (BOOL)shouldAutorotate { 
+    UIViewController *vc = [self gameRootVC];
+    return vc ? [vc shouldAutorotate] : YES; 
+}
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations { 
+    UIViewController *vc = [self gameRootVC];
+    return vc ? [vc supportedInterfaceOrientations] : UIInterfaceOrientationMaskAll; 
+}
 @end
 
 @interface PerformanceHUDWindow : UIWindow
-@property (nonatomic, strong) UIView *hudPanel; // <--- CÁI BẢNG ĐEN THẬT SỰ NẰM Ở ĐÂY
+@property (nonatomic, strong) UIView *hudPanel; 
 @property (nonatomic, strong) UILabel *fpsTitle;
 @property (nonatomic, strong) UILabel *fpsValue;
 @property (nonatomic, strong) HUDCircleView *cpuView;
@@ -91,20 +112,20 @@
     self = [super initWithFrame:frame];
     if (self) {
         self.windowLevel = UIWindowLevelStatusBar + 100.0;
-        self.backgroundColor = [UIColor clearColor]; // Cửa sổ chính vô hình
+        self.backgroundColor = [UIColor clearColor]; // Cửa sổ chính vô hình, to bằng màn hình
         
-        // --- TẠO BẢNG HUD PANEL ---
+        // TẠO BẢNG HUD PANEL CỤ THỂ
         self.hudPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 50, 185, 75)];
         self.hudPanel.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.85];
         self.hudPanel.layer.cornerRadius = 15;
         self.hudPanel.layer.masksToBounds = YES;
-        self.hudPanel.userInteractionEnabled = YES;
         [self addSubview:self.hudPanel];
 
+        // GẮN KÉO THẢ VÀO WINDOW ĐỂ BẮT TỌA ĐỘ CHUẨN
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-        [self.hudPanel addGestureRecognizer:pan]; // Gắn kéo thả vào Panel
+        [self addGestureRecognizer:pan]; 
 
-        // Dán UI vào Panel thay vì Window
+        // ADD UI VÀO PANEL
         self.fpsTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 15, 50, 15)];
         self.fpsTitle.text = @"FPS";
         self.fpsTitle.textColor = [UIColor lightGrayColor];
@@ -130,11 +151,12 @@
     return self;
 }
 
-// Xuyên thấu cảm ứng, chỉ bắt chạm vào cái Panel
+// FIX XUYÊN THẤU CẢM ỨNG: Chỉ khi chọc trúng cái bảng HUD đen thì mới ăn cảm ứng
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
     return CGRectContainsPoint(self.hudPanel.frame, point);
 }
 
+// FIX KÉO THẢ MƯỢT MÀ
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
     CGPoint translation = [recognizer translationInView:self];
     self.hudPanel.center = CGPointMake(self.hudPanel.center.x + translation.x, self.hudPanel.center.y + translation.y);
@@ -192,7 +214,6 @@ static PerformanceHUDWindow *hudWindow;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
-            // SỬA Ở ĐÂY: Window to bằng cả màn hình
             hudWindow = [[PerformanceHUDWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
             hudWindow.windowScene = (UIWindowScene *)self;
             hudWindow.rootViewController = [[HUDRootVC alloc] init];
