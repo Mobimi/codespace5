@@ -55,12 +55,9 @@
 - (void)updateWithProgress:(CGFloat)progress valueText:(NSString *)text {
     if (progress > 1.0) progress = 1.0;
     if (progress < 0.0) progress = 0.0;
-
     self.progressLayer.strokeEnd = progress;
-    
     CGFloat hue = (1.0 - progress) * 0.33; 
     UIColor *dynColor = [UIColor colorWithHue:hue saturation:1.0 brightness:1.0 alpha:1.0];
-    
     self.progressLayer.strokeColor = dynColor.CGColor;
     self.valueLabel.text = text;
 }
@@ -117,21 +114,11 @@
     return self;
 }
 
-// --- HÀM XỬ LÝ KÉO THẢ CHUẨN ---
-static CGPoint startCenter;
-static CGPoint startTouch;
-
+// --- HÀM XỬ LÝ KÉO THẢ (ĐÃ FIX LỖI GIẬT) ---
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
-    if (recognizer.state == UIGestureRecognizerStateBegan) {
-        startCenter = self.center;
-        startTouch = [recognizer locationInView:nil]; 
-    } 
-    else if (recognizer.state == UIGestureRecognizerStateChanged) {
-        CGPoint currentTouch = [recognizer locationInView:nil];
-        CGFloat dx = currentTouch.x - startTouch.x;
-        CGFloat dy = currentTouch.y - startTouch.y;
-        self.center = CGPointMake(startCenter.x + dx, startCenter.y + dy);
-    }
+    CGPoint translation = [recognizer translationInView:self];
+    self.center = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    [recognizer setTranslation:CGPointZero inView:self];
 }
 
 - (void)tick:(CADisplayLink *)link {
@@ -143,19 +130,21 @@ static CGPoint startTouch;
     NSTimeInterval delta = link.timestamp - self.lastTime;
     
     if (delta >= 1.0) {
+        // 1. UPDATE FPS
         double fps = self.count / delta;
         self.count = 0;
         self.lastTime = link.timestamp;
         self.fpsValue.text = [NSString stringWithFormat:@"%.0f", fps];
 
+        // 2. UPDATE RAM
         struct mach_task_basic_info info;
         mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
         kern_return_t kerr = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &size);
         double ramMB = (kerr == KERN_SUCCESS) ? (info.resident_size / 1024.0 / 1024.0) : 0;
-        
         CGFloat ramProgress = ramMB / 6144.0;
         [self.ramView updateWithProgress:ramProgress valueText:[NSString stringWithFormat:@"%.0f MB", ramMB]];
 
+        // 3. UPDATE CPU
         thread_array_t thread_list;
         mach_msg_type_number_t thread_count;
         thread_info_data_t thinfo;
@@ -179,8 +168,13 @@ static CGPoint startTouch;
             vm_deallocate(mach_task_self(), (vm_offset_t)thread_list, thread_count * sizeof(thread_t));
         }
         
-        CGFloat cpuProgress = total_cpu / 100.0; 
-        [self.cpuView updateWithProgress:cpuProgress valueText:[NSString stringWithFormat:@"%.0f%%", total_cpu]];
+        // FIX: Lấy tổng chia cho số nhân CPU để về thang 100%
+        NSUInteger numCores = [[NSProcessInfo processInfo] activeProcessorCount];
+        float normalized_cpu = total_cpu / numCores;
+        if (normalized_cpu > 100.0) normalized_cpu = 100.0; // Khóa mỏ lỡ nó nhảy lên 101%
+        
+        CGFloat cpuProgress = normalized_cpu / 100.0; 
+        [self.cpuView updateWithProgress:cpuProgress valueText:[NSString stringWithFormat:@"%.0f%%", normalized_cpu]];
     }
 }
 @end
