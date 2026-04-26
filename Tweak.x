@@ -16,36 +16,38 @@
 - (instancetype)initWithFrame:(CGRect)frame title:(NSString *)title {
     self = [super initWithFrame:frame];
     if (self) {
-        CGFloat radius = frame.size.width / 2.0 - 5;
+        CGFloat radius = frame.size.width / 2.0 - 4; // Bóp bán kính lại xíu
         CGPoint center = CGPointMake(frame.size.width / 2.0, frame.size.width / 2.0);
         UIBezierPath *circlePath = [UIBezierPath bezierPathWithArcCenter:center radius:radius startAngle:-M_PI_2 endAngle:M_PI_2 * 3 clockwise:YES];
 
         self.bgLayer = [CAShapeLayer layer];
         self.bgLayer.path = circlePath.CGPath;
         self.bgLayer.fillColor = [UIColor clearColor].CGColor;
-        self.bgLayer.strokeColor = [UIColor colorWithWhite:0.3 alpha:1.0].CGColor;
-        self.bgLayer.lineWidth = 4.0;
+        self.bgLayer.strokeColor = [UIColor colorWithWhite:0.5 alpha:0.5].CGColor; // Nhạt đi cho đỡ thô
+        self.bgLayer.lineWidth = 2.5; // Thanh mảnh
         [self.layer addSublayer:self.bgLayer];
 
         self.progressLayer = [CAShapeLayer layer];
         self.progressLayer.path = circlePath.CGPath;
         self.progressLayer.fillColor = [UIColor clearColor].CGColor;
         self.progressLayer.strokeColor = [UIColor greenColor].CGColor;
-        self.progressLayer.lineWidth = 4.0;
+        self.progressLayer.lineWidth = 2.5; // Thanh mảnh
         self.progressLayer.strokeEnd = 0.0; 
         self.progressLayer.lineCap = kCALineCapRound;
         [self.layer addSublayer:self.progressLayer];
 
+        // Tên (CPU/RAM) nằm giữa vòng tròn
         self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.width)];
         self.titleLabel.text = title;
         self.titleLabel.textColor = [UIColor whiteColor];
-        self.titleLabel.font = [UIFont boldSystemFontOfSize:11];
+        self.titleLabel.font = [UIFont boldSystemFontOfSize:9]; // Hạ cỡ chữ
         self.titleLabel.textAlignment = NSTextAlignmentCenter;
         [self addSubview:self.titleLabel];
 
-        self.valueLabel = [[UILabel alloc] initWithFrame:CGRectMake(-10, frame.size.width + 2, frame.size.width + 20, 20)];
+        // Thông số nằm ngay sát đít vòng tròn
+        self.valueLabel = [[UILabel alloc] initWithFrame:CGRectMake(-10, frame.size.width - 2, frame.size.width + 20, 15)];
         self.valueLabel.textColor = [UIColor whiteColor];
-        self.valueLabel.font = [UIFont boldSystemFontOfSize:11];
+        self.valueLabel.font = [UIFont boldSystemFontOfSize:9]; // Hạ cỡ chữ
         self.valueLabel.textAlignment = NSTextAlignmentCenter;
         [self addSubview:self.valueLabel];
     }
@@ -70,9 +72,8 @@
 @interface HUDRootVC : UIViewController
 @end
 @implementation HUDRootVC
-- (BOOL)prefersStatusBarHidden { return YES; } // Trảm Status Bar
+- (BOOL)prefersStatusBarHidden { return YES; } 
 
-// MA THUẬT: ĐI TÌM WINDOW CỦA GAME ĐỂ CHÉP BÀI (HƯỚNG XOAY)
 - (UIViewController *)gameRootVC {
     if (@available(iOS 13.0, *)) {
         UIWindowScene *scene = (UIWindowScene *)self.view.window.windowScene;
@@ -85,7 +86,6 @@
     return nil;
 }
 
-// Bắt chước 100% hướng xoay của Game, kể cả khi khoá màn hình dọc ngoài Control Center
 - (BOOL)shouldAutorotate { 
     UIViewController *vc = [self gameRootVC];
     return vc ? [vc shouldAutorotate] : YES; 
@@ -112,37 +112,37 @@
     self = [super initWithFrame:frame];
     if (self) {
         self.windowLevel = UIWindowLevelStatusBar + 100.0;
-        self.backgroundColor = [UIColor clearColor]; // Cửa sổ chính vô hình, to bằng màn hình
+        self.backgroundColor = [UIColor clearColor]; 
         
-        // TẠO BẢNG HUD PANEL CỤ THỂ
-        self.hudPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 50, 185, 75)];
-        self.hudPanel.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.85];
-        self.hudPanel.layer.cornerRadius = 15;
+        // BẢNG HUD MỚI: XUYÊN THẤU VÀ MI NHON
+        self.hudPanel = [[UIView alloc] initWithFrame:CGRectMake(20, 50, 145, 55)]; // Nhỏ lại rõ rệt
+        self.hudPanel.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.4]; // Nền trong suốt 60%
+        self.hudPanel.layer.cornerRadius = 12; // Bo tròn sexy
         self.hudPanel.layer.masksToBounds = YES;
         [self addSubview:self.hudPanel];
 
-        // GẮN KÉO THẢ VÀO WINDOW ĐỂ BẮT TỌA ĐỘ CHUẨN
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:pan]; 
 
-        // ADD UI VÀO PANEL
-        self.fpsTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 15, 50, 15)];
+        // CĂN CHỈNH LẠI BỐ CỤC FPS
+        self.fpsTitle = [[UILabel alloc] initWithFrame:CGRectMake(5, 8, 45, 15)];
         self.fpsTitle.text = @"FPS";
         self.fpsTitle.textColor = [UIColor lightGrayColor];
-        self.fpsTitle.font = [UIFont boldSystemFontOfSize:12];
+        self.fpsTitle.font = [UIFont boldSystemFontOfSize:10];
         self.fpsTitle.textAlignment = NSTextAlignmentCenter;
         [self.hudPanel addSubview:self.fpsTitle];
 
-        self.fpsValue = [[UILabel alloc] initWithFrame:CGRectMake(10, 30, 50, 30)];
+        self.fpsValue = [[UILabel alloc] initWithFrame:CGRectMake(5, 22, 45, 25)];
         self.fpsValue.textColor = [UIColor greenColor];
-        self.fpsValue.font = [UIFont boldSystemFontOfSize:22];
+        self.fpsValue.font = [UIFont boldSystemFontOfSize:18];
         self.fpsValue.textAlignment = NSTextAlignmentCenter;
         [self.hudPanel addSubview:self.fpsValue];
 
-        self.cpuView = [[HUDCircleView alloc] initWithFrame:CGRectMake(70, 10, 40, 40) title:@"CPU"];
+        // CĂN CHỈNH LẠI VÒNG TRÒN (XÍCH LẠI GẦN NHAU)
+        self.cpuView = [[HUDCircleView alloc] initWithFrame:CGRectMake(55, 6, 35, 35) title:@"CPU"];
         [self.hudPanel addSubview:self.cpuView];
 
-        self.ramView = [[HUDCircleView alloc] initWithFrame:CGRectMake(130, 10, 40, 40) title:@"RAM"];
+        self.ramView = [[HUDCircleView alloc] initWithFrame:CGRectMake(100, 6, 35, 35) title:@"RAM"];
         [self.hudPanel addSubview:self.ramView];
 
         self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
@@ -151,12 +151,10 @@
     return self;
 }
 
-// FIX XUYÊN THẤU CẢM ỨNG: Chỉ khi chọc trúng cái bảng HUD đen thì mới ăn cảm ứng
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
     return CGRectContainsPoint(self.hudPanel.frame, point);
 }
 
-// FIX KÉO THẢ MƯỢT MÀ
 - (void)handlePan:(UIPanGestureRecognizer *)recognizer {
     CGPoint translation = [recognizer translationInView:self];
     self.hudPanel.center = CGPointMake(self.hudPanel.center.x + translation.x, self.hudPanel.center.y + translation.y);
